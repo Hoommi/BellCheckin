@@ -37,8 +37,7 @@ public final class BellCheckin extends JavaPlugin {
         this.bellLocationManager.loadFromDb();
         EventManager.registerEvents();
         HookManager.loadHooks();
-        // Register command executor for /bci
-        this.getCommand("bci").setExecutor(new org.hommi.bellCheckin.commands.BciCommand());
+        CommandManager.registerCommands();
     }
 
     private void setUpDb() {
