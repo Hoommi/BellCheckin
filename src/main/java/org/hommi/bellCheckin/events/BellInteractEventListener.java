@@ -3,11 +3,13 @@ package org.hommi.bellCheckin.events;
 import me.TechsCode.UltraEconomy.objects.Account;
 import me.TechsCode.UltraEconomy.objects.Currency;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BellRingEvent;
 import org.hommi.bellCheckin.BellCheckin;
+import org.hommi.bellCheckin.manager.BellLocationManager;
 import org.hommi.bellCheckin.manager.CheckinManager;
 
 import java.time.Duration;
@@ -19,6 +21,18 @@ public class BellInteractEventListener implements Listener {
     @EventHandler
     public void onBellInteract(BellRingEvent event) {
         if (event.getEntity() instanceof Player player) {
+            Location bellLoc = event.getBlock().getLocation();
+            BellLocationManager bellLocationManager = BellCheckin.getInstance().getBellLocationManager();
+//            Check if the bell location is a registered check-in bell
+            boolean isCheckinBell = bellLocationManager.getBellLocations().stream().anyMatch(
+                loc -> loc.worldName().equals(bellLoc.getWorld().getName()) &&
+                        loc.x() == bellLoc.getX() &&
+                        loc.y() == bellLoc.getY() &&
+                        loc.z() == bellLoc.getZ()
+            );
+            if (!isCheckinBell) {
+                return;
+            }
             Optional<Account> optionalAccount =
                     BellCheckin.getInstance().ultraEconomy.getAccounts()
                             .stream()

@@ -2,6 +2,7 @@ package org.hommi.bellCheckin;
 
 import me.TechsCode.UltraEconomy.UltraEconomyAPI;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.hommi.bellCheckin.manager.BellLocationManager;
 import org.hommi.bellCheckin.manager.CheckinManager;
 import org.hommi.bellCheckin.sqlite.SQLiteManager;
 
@@ -12,6 +13,7 @@ public final class BellCheckin extends JavaPlugin {
     private static BellCheckin instance;
     public UltraEconomyAPI ultraEconomy;
     private CheckinManager checkinManager;
+    private BellLocationManager bellLocationManager;
 
     public static BellCheckin getInstance() {
         return instance;
@@ -31,8 +33,12 @@ public final class BellCheckin extends JavaPlugin {
         createDataFolder();
         setUpDb();
         this.checkinManager = new CheckinManager();
+        this.bellLocationManager = new BellLocationManager();
+        this.bellLocationManager.loadFromDb();
         EventManager.registerEvents();
         HookManager.loadHooks();
+        // Register command executor for /bci
+        this.getCommand("bci").setExecutor(new org.hommi.bellCheckin.commands.BciCommand());
     }
 
     private void setUpDb() {
@@ -50,5 +56,9 @@ public final class BellCheckin extends JavaPlugin {
 
     public CheckinManager getCheckinManager() {
         return checkinManager;
+    }
+
+    public BellLocationManager getBellLocationManager() {
+        return bellLocationManager;
     }
 }
