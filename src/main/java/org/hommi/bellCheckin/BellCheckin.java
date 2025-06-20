@@ -6,8 +6,6 @@ import org.hommi.bellCheckin.manager.BellLocationManager;
 import org.hommi.bellCheckin.manager.CheckinManager;
 import org.hommi.bellCheckin.sqlite.SQLiteManager;
 
-import java.sql.SQLException;
-
 public final class BellCheckin extends JavaPlugin {
 
     private static BellCheckin instance;
