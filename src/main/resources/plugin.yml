@@ -7,3 +7,5 @@ load: STARTUP
 authors: [ htilssu ]
 website: https://hommi.cloud
 depend: [ 'UltraEconomy' ]
+
+commands:
