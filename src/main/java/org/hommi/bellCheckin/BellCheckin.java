@@ -1,7 +1,6 @@
 package org.hommi.bellCheckin;
 
 import me.TechsCode.UltraEconomy.UltraEconomyAPI;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.hommi.bellCheckin.manager.BellLocationManager;
@@ -11,7 +10,6 @@ import org.hommi.bellCheckin.manager.LanguageManager;
 import org.hommi.bellCheckin.sqlite.SQLiteManager;
 
 import java.io.File;
-import java.io.IOException;
 
 public final class BellCheckin extends JavaPlugin {
 
