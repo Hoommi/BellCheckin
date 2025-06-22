@@ -1,11 +1,23 @@
 name: BellCheckin
-version: '1.0-SNAPSHOT'
+version: "1.0-SNAPSHOT"
 main: org.hommi.bellCheckin.BellCheckin
-api-version: '1.20'
+api-version: "1.20"
 prefix: Hommi
 load: STARTUP
-authors: [ htilssu ]
+authors: [htilssu]
 website: https://hommi.cloud
-depend: [ 'UltraEconomy' ]
+depend: ["UltraEconomy"]
 
 commands:
+  bci:
+    description: Lệnh quản lý BellCheckin
+    usage: /bci <add|reload>
+    permission: bellcheckin.admin
+
+permissions:
+  bellcheckin.admin:
+    description: Cho phép sử dụng tất cả lệnh quản lý BellCheckin
+    default: op
+  bellcheckin.remove:
+    description: Cho phép phá chuông điểm danh
+    default: op

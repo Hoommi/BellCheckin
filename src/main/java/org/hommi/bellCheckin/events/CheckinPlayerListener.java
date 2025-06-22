@@ -1,11 +1,13 @@
 package org.hommi.bellCheckin.events;
 
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.hommi.bellCheckin.BellCheckin;
+import org.hommi.bellCheckin.manager.CheckinManager;
 import org.hommi.bellCheckin.model.CheckinInfo;
 
 import java.util.UUID;
@@ -28,10 +30,14 @@ public class CheckinPlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        CheckinInfo info = plugin.getCheckinManager().get(event.getPlayer().getUniqueId());
-        plugin.getCheckinManager()
-                .remove(event.getPlayer()
-                        .getUniqueId());
-        plugin.getCheckinManager().saveToDb(info);
+        Player player = event.getPlayer();
+        UUID playerUuid = player.getUniqueId();
+
+        // Lưu dữ liệu điểm danh khi người chơi thoát
+        CheckinManager checkinManager = BellCheckin.getInstance().getCheckinManager();
+        if (checkinManager.contains(playerUuid)) {
+            CheckinInfo info = checkinManager.get(playerUuid);
+            checkinManager.saveToDb(info);
+        }
     }
 }

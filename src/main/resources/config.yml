@@ -3,12 +3,20 @@ rewards:
   daily:
     enabled: true
     amount: 100 # Amount of money or points for daily check-in
-    command: '' # Optional: command to run on check-in
+    command: "" # Optional: command to run on check-in
   streak:
     enabled: true
     milestones:
-      3: 300   # 3-day streak reward
-      7: 700   # 7-day streak reward
+      3: 300 # 3-day streak reward
+      7: 700 # 7-day streak reward
       30: 3000 # 30-day streak reward
-    command: '' # Optional: command to run on streak
+    command: "" # Optional: command to run on streak
+
+# Cài đặt cơ sở dữ liệu
+database:
+  auto_save_interval: 30 # Thời gian tự động lưu dữ liệu (phút)
+
+# Cài đặt chung
+settings:
+  debug_mode: false # Bật chế độ debug
 

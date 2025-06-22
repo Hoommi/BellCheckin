@@ -1,0 +1,14 @@
+# BellCheckin - Language File
+messages:
+  checkin_success: "&aĐiểm danh thành công!"
+  checkin_already: "&eBạn đã điểm danh hôm nay rồi."
+  streak_reward: "&bChúc mừng! Bạn đã đạt streak {streak} ngày và nhận được phần thưởng đặc biệt!"
+  daily_reward: "&aBạn đã nhận được {amount} cho việc điểm danh hôm nay."
+  no_permission: "&cBạn không có quyền sử dụng lệnh này."
+  usage: "&eCách sử dụng: /bci <add|reload>"
+  set_location: "&aChuột trái vào chuông để thiết lập điểm điểm danh."
+  bell_exists: "&eĐiểm điểm danh này đã tồn tại."
+  bell_added: "&aĐã thêm điểm điểm danh mới."
+  bell_removed: "&aĐã xóa điểm điểm danh."
+  config_reloaded: "&aĐã tải lại cấu hình plugin."
+  no_account: "&cBạn chưa có tài khoản trong hệ thống!"
