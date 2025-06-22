@@ -9,13 +9,15 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.hommi.bellCheckin.BellCheckin;
 import org.hommi.bellCheckin.manager.LanguageManager;
+import org.hommi.bellCheckin.sqlite.DatabaseVersionManager;
+import org.hommi.bellCheckin.sqlite.SQLiteManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 public class BciCommand implements CommandExecutor, TabCompleter {
 
-    // Track players in add mode
+    // Theo dõi người chơi trong chế độ thêm chuông
     public static final Set<UUID> addModePlayers = new HashSet<>();
 
     @Override
@@ -33,33 +35,51 @@ public class BciCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("Lệnh này chỉ có thể được sử dụng bởi người chơi.")
-                    .color(NamedTextColor.RED));
-            return true;
-        }
-
         LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
-
-        // Kiểm tra quyền
-        if (!player.isOp() && !player.hasPermission("bellcheckin.admin")) {
-            player.sendMessage(Component.text(langManager.getNoPermissionMessage())
-                    .color(NamedTextColor.RED));
-            return true;
-        }
 
         // Xử lý các lệnh con
         switch (args[0].toLowerCase()) {
             case "add":
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(Component.text("Lệnh này chỉ có thể được sử dụng bởi người chơi.")
+                            .color(NamedTextColor.RED));
+                    return true;
+                }
+
+                // Kiểm tra quyền
+                if (!player.isOp() && !player.hasPermission("bellcheckin.admin")) {
+                    player.sendMessage(Component.text(langManager.getNoPermissionMessage())
+                            .color(NamedTextColor.RED));
+                    return true;
+                }
+
                 handleAddCommand(player, langManager);
                 break;
 
             case "reload":
-                handleReloadCommand(player);
+                // Kiểm tra quyền
+                if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage())
+                            .color(NamedTextColor.RED));
+                    return true;
+                }
+
+                handleReloadCommand(sender);
+                break;
+
+            case "version":
+                // Kiểm tra quyền
+                if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage())
+                            .color(NamedTextColor.RED));
+                    return true;
+                }
+
+                handleVersionCommand(sender);
                 break;
 
             default:
-                showHelp(player);
+                showHelp(sender);
                 break;
         }
 
@@ -72,10 +92,44 @@ public class BciCommand implements CommandExecutor, TabCompleter {
                 .color(NamedTextColor.GREEN));
     }
 
-    private void handleReloadCommand(Player player) {
+    private void handleReloadCommand(CommandSender sender) {
         BellCheckin.getInstance().reloadAllConfigs();
-        player.sendMessage(Component.text("Đã tải lại cấu hình plugin!")
+        sender.sendMessage(Component.text("Đã tải lại cấu hình plugin!")
                 .color(NamedTextColor.GREEN));
+    }
+
+    private void handleVersionCommand(CommandSender sender) {
+        String pluginVersion = BellCheckin.getInstance().getPluginVersion();
+        sender.sendMessage(Component.text("=== BellCheckin Thông tin phiên bản ===")
+                .color(NamedTextColor.GOLD));
+        sender.sendMessage(Component.text("Phiên bản plugin: ")
+                .color(NamedTextColor.YELLOW)
+                .append(Component.text(pluginVersion)
+                        .color(NamedTextColor.GREEN)));
+
+        // Lấy thông tin phiên bản database
+        try (SQLiteManager sqliteManager = new SQLiteManager()) {
+            sqliteManager.connect();
+            DatabaseVersionManager versionManager = new DatabaseVersionManager(BellCheckin.getInstance(),
+                    sqliteManager);
+            int currentVersion = versionManager.getCurrentVersion();
+            int latestVersion = versionManager.getLatestVersion();
+
+            sender.sendMessage(Component.text("Phiên bản database: ")
+                    .color(NamedTextColor.YELLOW)
+                    .append(Component.text(currentVersion)
+                            .color(currentVersion == latestVersion ? NamedTextColor.GREEN : NamedTextColor.RED)));
+
+            sender.sendMessage(Component.text("Phiên bản database mới nhất: ")
+                    .color(NamedTextColor.YELLOW)
+                    .append(Component.text(latestVersion)
+                            .color(NamedTextColor.GREEN)));
+        } catch (Exception e) {
+            sender.sendMessage(Component.text("Lỗi khi kiểm tra phiên bản database: " + e.getMessage())
+                    .color(NamedTextColor.RED));
+            BellCheckin.getInstance().getLogger().severe("Lỗi khi kiểm tra phiên bản database: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void showHelp(CommandSender sender) {
@@ -89,6 +143,10 @@ public class BciCommand implements CommandExecutor, TabCompleter {
                 .color(NamedTextColor.YELLOW)
                 .append(Component.text(" - Tải lại cấu hình plugin")
                         .color(NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text("/bci version")
+                .color(NamedTextColor.YELLOW)
+                .append(Component.text(" - Hiển thị thông tin phiên bản")
+                        .color(NamedTextColor.WHITE)));
     }
 
     @Override
@@ -100,6 +158,7 @@ public class BciCommand implements CommandExecutor, TabCompleter {
             List<String> completions = new ArrayList<>();
             completions.add("add");
             completions.add("reload");
+            completions.add("version");
 
             return completions.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))

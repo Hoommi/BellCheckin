@@ -9,6 +9,7 @@ import org.hommi.bellCheckin.BellCheckin;
 public class SQLiteManager implements AutoCloseable {
     private final String dbPath;
     private Connection connection;
+    private DatabaseVersionManager versionManager;
 
     public SQLiteManager() {
         File dataFolder = BellCheckin.getInstance().getDataFolder();
@@ -44,29 +45,44 @@ public class SQLiteManager implements AutoCloseable {
         }
     }
 
-    public void createCheckinTable() throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS checkin (" +
-                "userUuid TEXT PRIMARY KEY," +
-                "lastCheckin INTEGER," +
-                "streak INTEGER DEFAULT 0," +
-                "lastStreakReward INTEGER DEFAULT 0" +
-                ")";
-        try (var stmt = getConnection().createStatement()) {
-            stmt.execute(sql);
+    /**
+     * Khởi tạo và cập nhật database
+     */
+    public void initializeDatabase() {
+        try {
+            connect();
+
+            // Khởi tạo quản lý phiên bản nếu chưa có
+            if (versionManager == null) {
+                versionManager = new DatabaseVersionManager(BellCheckin.getInstance(), this);
+            }
+
+            // Cập nhật database lên phiên bản mới nhất
+            versionManager.updateToLatest();
+        } catch (SQLException e) {
+            BellCheckin.getInstance().getLogger().severe("Lỗi khi khởi tạo database: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Tạo bảng checkin nếu chưa tồn tại
+     * 
+     * @deprecated Sử dụng initializeDatabase() thay thế
+     */
+    @Deprecated
+    public void createCheckinTable() throws SQLException {
+        initializeDatabase();
+    }
+
+    /**
+     * Tạo bảng bell_locations nếu chưa tồn tại
+     * 
+     * @deprecated Sử dụng initializeDatabase() thay thế
+     */
+    @Deprecated
     public void createBellLocationTable() throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS bell_locations (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "worldName TEXT NOT NULL," +
-                "x INTEGER NOT NULL," +
-                "y INTEGER NOT NULL," +
-                "z INTEGER NOT NULL" +
-                ")";
-        try (var stmt = getConnection().createStatement()) {
-            stmt.execute(sql);
-        }
+        initializeDatabase();
     }
 
     @Override

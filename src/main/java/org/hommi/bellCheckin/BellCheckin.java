@@ -21,6 +21,7 @@ public final class BellCheckin extends JavaPlugin {
     private LanguageManager languageManager;
     private File langFile;
     private YamlConfiguration langConfig;
+    private String pluginVersion;
 
     public static BellCheckin getInstance() {
         return instance;
@@ -37,6 +38,10 @@ public final class BellCheckin extends JavaPlugin {
         instance = this;
         createDataFolder();
 
+        // Lưu phiên bản plugin
+        pluginVersion = getDescription().getVersion();
+        getLogger().info("Đang khởi động BellCheckin phiên bản " + pluginVersion);
+
         // Khởi tạo các manager
         this.configManager = new ConfigManager(this);
         this.languageManager = new LanguageManager(this);
@@ -47,7 +52,7 @@ public final class BellCheckin extends JavaPlugin {
         reloadConfig();
         loadLanguageFile();
 
-        // Thiết lập database
+        // Thiết lập database với quản lý phiên bản
         setupDatabase();
 
         // Khởi tạo các manager khác
@@ -65,9 +70,8 @@ public final class BellCheckin extends JavaPlugin {
 
     private void setupDatabase() {
         try (SQLiteManager sqLiteManager = new SQLiteManager()) {
-            sqLiteManager.connect();
-            sqLiteManager.createCheckinTable();
-            sqLiteManager.createBellLocationTable();
+            // Khởi tạo và cập nhật database theo phiên bản
+            sqLiteManager.initializeDatabase();
         } catch (Exception e) {
             getLogger().severe("Không thể thiết lập database: " + e.getMessage());
             e.printStackTrace();
@@ -108,6 +112,15 @@ public final class BellCheckin extends JavaPlugin {
 
     public LanguageManager getLanguageManager() {
         return languageManager;
+    }
+
+    /**
+     * Lấy phiên bản hiện tại của plugin
+     * 
+     * @return Chuỗi phiên bản
+     */
+    public String getPluginVersion() {
+        return pluginVersion;
     }
 
     // Tải giá trị từ config.yml
