@@ -2,7 +2,7 @@
 rewards:
   daily:
     enabled: true
-    amount: 100 # Amount of money or points for daily check-in
+    amount: 300 # Amount of money or points for daily check-in
     command: "" # Optional: command to run on check-in
   streak:
     enabled: true

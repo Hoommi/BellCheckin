@@ -92,7 +92,7 @@ public class BellLocationManager {
                     bellLocations.add(new BellLocation(worldName, x, y, z));
                 }
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             plugin.getLogger().severe("Lỗi khi tải vị trí chuông từ database: " + e.getMessage());
         }
     }
@@ -113,7 +113,7 @@ public class BellLocationManager {
                 pstmt.setInt(4, location.z());
                 pstmt.executeUpdate();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             plugin.getLogger().severe("Lỗi khi lưu vị trí chuông vào database: " + e.getMessage());
         }
     }
@@ -137,7 +137,7 @@ public class BellLocationManager {
                 pstmt.setInt(4, z);
                 pstmt.executeUpdate();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             plugin.getLogger().severe("Lỗi khi xóa vị trí chuông khỏi database: " + e.getMessage());
         }
     }
@@ -166,7 +166,7 @@ public class BellLocationManager {
                 }
                 pstmt.executeBatch();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             plugin.getLogger().severe("Lỗi khi lưu tất cả vị trí chuông vào database: " + e.getMessage());
         }
     }
