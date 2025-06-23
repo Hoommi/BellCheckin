@@ -9,7 +9,7 @@ import org.hommi.bellCheckin.BellCheckin;
 public class SQLiteManager implements AutoCloseable {
     private final String dbPath;
     private Connection connection;
-    private DatabaseVersionManager versionManager;
+    private LiquibaseMigrationManager migrationManager;
 
     public SQLiteManager() {
         File dataFolder = BellCheckin.getInstance().getDataFolder();
@@ -46,22 +46,85 @@ public class SQLiteManager implements AutoCloseable {
     }
 
     /**
-     * Khởi tạo và cập nhật database
+     * Khởi tạo và cập nhật database sử dụng Liquibase
      */
     public void initializeDatabase() {
         try {
             connect();
 
-            // Khởi tạo quản lý phiên bản nếu chưa có
-            if (versionManager == null) {
-                versionManager = new DatabaseVersionManager(BellCheckin.getInstance(), this);
+            // Khởi tạo Liquibase migration manager nếu chưa có
+            if (migrationManager == null) {
+                migrationManager = new LiquibaseMigrationManager(BellCheckin.getInstance(), this);
             }
 
             // Cập nhật database lên phiên bản mới nhất
-            versionManager.updateToLatest();
+            migrationManager.updateToLatest();
         } catch (SQLException e) {
             BellCheckin.getInstance().getLogger().severe("Lỗi khi khởi tạo database: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Cập nhật database đến một phiên bản cụ thể
+     * 
+     * @param targetVersion Phiên bản đích
+     */
+    public void updateDatabaseToVersion(String targetVersion) {
+        try {
+            connect();
+
+            if (migrationManager == null) {
+                migrationManager = new LiquibaseMigrationManager(BellCheckin.getInstance(), this);
+            }
+
+            migrationManager.updateToVersion(targetVersion);
+        } catch (SQLException e) {
+            BellCheckin.getInstance().getLogger()
+                    .severe("Lỗi khi cập nhật database đến phiên bản " + targetVersion + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Rollback database đến một phiên bản cụ thể
+     * 
+     * @param targetVersion Phiên bản đích
+     */
+    public void rollbackDatabaseToVersion(String targetVersion) {
+        try {
+            connect();
+
+            if (migrationManager == null) {
+                migrationManager = new LiquibaseMigrationManager(BellCheckin.getInstance(), this);
+            }
+
+            migrationManager.rollbackToVersion(targetVersion);
+        } catch (SQLException e) {
+            BellCheckin.getInstance().getLogger()
+                    .severe("Lỗi khi rollback database đến phiên bản " + targetVersion + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Lấy phiên bản hiện tại của database
+     * 
+     * @return Phiên bản hiện tại
+     */
+    public String getDatabaseVersion() {
+        try {
+            connect();
+
+            if (migrationManager == null) {
+                migrationManager = new LiquibaseMigrationManager(BellCheckin.getInstance(), this);
+            }
+
+            return migrationManager.getCurrentVersion();
+        } catch (SQLException e) {
+            BellCheckin.getInstance().getLogger().severe("Lỗi khi lấy phiên bản database: " + e.getMessage());
+            e.printStackTrace();
+            return "unknown";
         }
     }
 

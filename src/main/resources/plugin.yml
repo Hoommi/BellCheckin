@@ -4,7 +4,7 @@ main: org.hommi.bellCheckin.BellCheckin
 api-version: "1.20"
 prefix: Hommi
 load: STARTUP
-authors: [htilssu]
+authors: ["htilssu"]
 website: https://hommi.cloud
 depend: ["UltraEconomy"]
 

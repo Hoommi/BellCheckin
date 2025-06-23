@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: bellcheckin
+      comment: Tạo bảng cơ bản
+      changes:
+        - createTable:
+            tableName: checkin
+            columns:
+              - column:
+                  name: userUuid
+                  type: TEXT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: lastCheckin
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+                  defaultValue: 0
+
+  - changeSet:
+      id: 2
+      author: bellcheckin
+      comment: Thêm hỗ trợ streak
+      changes:
+        - addColumn:
+            tableName: checkin
+            columns:
+              - column:
+                  name: streak
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: lastStreakReward
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 3
+      author: bellcheckin
+      comment: Tạo bảng vị trí chuông
+      changes:
+        - createTable:
+            tableName: bell_locations
+            columns:
+              - column:
+                  name: id
+                  type: INTEGER
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: worldName
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: x
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: y
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: z
+                  type: INTEGER
+                  constraints:
+                    nullable: false

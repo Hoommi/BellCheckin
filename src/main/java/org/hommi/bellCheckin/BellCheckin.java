@@ -39,7 +39,7 @@ public final class BellCheckin extends JavaPlugin {
         createDataFolder();
 
         // Lưu phiên bản plugin
-        pluginVersion = getDescription().getVersion();
+        pluginVersion = this.getVersion();
         getLogger().info("Đang khởi động BellCheckin phiên bản " + pluginVersion);
 
         // Khởi tạo các manager
@@ -66,6 +66,10 @@ public final class BellCheckin extends JavaPlugin {
         CommandManager.registerCommands();
 
         getLogger().info("BellCheckin đã được kích hoạt thành công!");
+    }
+
+    private String getVersion() {
+        return "1.0.0";
     }
 
     private void setupDatabase() {
