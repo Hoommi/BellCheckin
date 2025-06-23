@@ -11,7 +11,7 @@ depend: ["UltraEconomy"]
 commands:
   bci:
     description: Lệnh quản lý BellCheckin
-    usage: /bci <add|reload>
+    usage: /bci <add|list|remove|reload|version>
     permission: bellcheckin.admin
 
 permissions:
@@ -20,4 +20,7 @@ permissions:
     default: op
   bellcheckin.remove:
     description: Cho phép phá chuông điểm danh
+    default: op
+  bellcheckin.list:
+    description: Cho phép xem danh sách chuông điểm danh
     default: op

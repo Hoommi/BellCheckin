@@ -1,18 +1,27 @@
 package org.hommi.bellCheckin.commands;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.hommi.bellCheckin.BellCheckin;
+import org.hommi.bellCheckin.LangKey;
+import org.hommi.bellCheckin.manager.BellLocationManager;
 import org.hommi.bellCheckin.manager.LanguageManager;
-import org.hommi.bellCheckin.sqlite.SQLiteManager;
+import org.hommi.bellCheckin.model.BellLocation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 
 public class BciCommand implements CommandExecutor, TabCompleter {
 
@@ -40,26 +49,49 @@ public class BciCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase()) {
             case "add":
                 if (!(sender instanceof Player player)) {
-                    sender.sendMessage(Component.text("Lệnh này chỉ có thể được sử dụng bởi người chơi.")
-                            .color(NamedTextColor.RED));
+                    sender.sendMessage(Component.text(langManager.getPlayerOnlyMessage()));
                     return true;
                 }
 
                 // Kiểm tra quyền
                 if (!player.isOp() && !player.hasPermission("bellcheckin.admin")) {
-                    player.sendMessage(Component.text(langManager.getNoPermissionMessage())
-                            .color(NamedTextColor.RED));
+                    player.sendMessage(Component.text(langManager.getNoPermissionMessage()));
                     return true;
                 }
 
                 handleAddCommand(player, langManager);
                 break;
 
+            case "list":
+                // Kiểm tra quyền
+                if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")
+                        && !sender.hasPermission("bellcheckin.list")) {
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage()));
+                    return true;
+                }
+
+                handleListCommand(sender);
+                break;
+
+            case "remove":
+                // Kiểm tra quyền
+                if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage()));
+                    return true;
+                }
+
+                if (args.length < 5) {
+                    sender.sendMessage(Component.text(langManager.getRemoveUsageMessage()));
+                    return true;
+                }
+
+                handleRemoveCommand(sender, args[1], args[2], args[3], args[4]);
+                break;
+
             case "reload":
                 // Kiểm tra quyền
                 if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
-                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage())
-                            .color(NamedTextColor.RED));
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage()));
                     return true;
                 }
 
@@ -69,8 +101,7 @@ public class BciCommand implements CommandExecutor, TabCompleter {
             case "version":
                 // Kiểm tra quyền
                 if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
-                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage())
-                            .color(NamedTextColor.RED));
+                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage()));
                     return true;
                 }
 
@@ -87,63 +118,84 @@ public class BciCommand implements CommandExecutor, TabCompleter {
 
     private void handleAddCommand(Player player, LanguageManager langManager) {
         addModePlayers.add(player.getUniqueId());
-        player.sendMessage(Component.text(langManager.getSetLocationMessage())
-                .color(NamedTextColor.GREEN));
+        player.sendMessage(Component.text(langManager.getSetLocationMessage()));
+    }
+
+    private void handleListCommand(CommandSender sender) {
+        LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
+        BellLocationManager bellLocationManager = BellCheckin.getInstance().getBellLocationManager();
+        List<BellLocation> bellLocations = bellLocationManager.getBellLocations();
+
+        if (bellLocations.isEmpty()) {
+            sender.sendMessage(Component.text(langManager.getNoBellsMessage()));
+            return;
+        }
+
+        sender.sendMessage(Component.text(langManager.getBellListTitleMessage()));
+
+        int index = 1;
+        for (BellLocation location : bellLocations) {
+            // Tạo component cho thông tin vị trí
+            Component locationText = Component.text(langManager.getBellListFormatMessage(
+                    index, location.worldName(), location.x(), location.y(), location.z()));
+
+            // Nút xóa
+            Component deleteButton = Component.text(langManager.getBellDeleteButtonMessage())
+                    .clickEvent(ClickEvent.runCommand("/bci remove " + location.worldName() + " " + location.x() + " "
+                            + location.y() + " " + location.z()))
+                    .hoverEvent(HoverEvent.showText(Component.text(langManager.getBellDeleteHoverMessage())));
+
+            // Kết hợp thông tin vị trí và nút xóa
+            sender.sendMessage(locationText.append(deleteButton));
+            index++;
+        }
+    }
+
+    private void handleRemoveCommand(CommandSender sender, String worldName, String xStr, String yStr, String zStr) {
+        LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
+        try {
+            int x = Integer.parseInt(xStr);
+            int y = Integer.parseInt(yStr);
+            int z = Integer.parseInt(zStr);
+
+            BellLocationManager bellLocationManager = BellCheckin.getInstance().getBellLocationManager();
+            boolean removed = bellLocationManager.removeBellLocation(worldName, x, y, z);
+
+            if (removed) {
+                sender.sendMessage(Component.text(langManager.getRemoveSuccessMessage(worldName, x, y, z)));
+            } else {
+                sender.sendMessage(Component.text(langManager.getRemoveNotFoundMessage()));
+            }
+        } catch (NumberFormatException e) {
+            sender.sendMessage(Component.text(langManager.getRemoveInvalidCoordsMessage()));
+        }
     }
 
     private void handleReloadCommand(CommandSender sender) {
         BellCheckin.getInstance().reloadAllConfigs();
-        sender.sendMessage(Component.text("Đã tải lại cấu hình plugin!")
-                .color(NamedTextColor.GREEN));
+        LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
+        sender.sendMessage(Component.text(langManager.colorize(langManager.getMessage(LangKey.CONFIG_RELOADED))));
     }
 
     private void handleVersionCommand(CommandSender sender) {
+        LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
         String pluginVersion = BellCheckin.getInstance().getPluginVersion();
-        sender.sendMessage(Component.text("=== BellCheckin Thông tin phiên bản ===")
-                .color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("Phiên bản plugin: ")
-                .color(NamedTextColor.YELLOW)
-                .append(Component.text(pluginVersion)
-                        .color(NamedTextColor.GREEN)));
+        String targetVersion = BellCheckin.getInstance().getTargetDatabaseVersion();
 
-        // Lấy thông tin phiên bản database
-        try (SQLiteManager sqliteManager = new SQLiteManager()) {
-            sqliteManager.connect();
-            String currentVersion = sqliteManager.getDatabaseVersion();
-            String targetVersion = BellCheckin.getInstance().getTargetDatabaseVersion();
-
-            sender.sendMessage(Component.text("Phiên bản database hiện tại: ")
-                    .color(NamedTextColor.YELLOW)
-                    .append(Component.text(currentVersion)
-                            .color(NamedTextColor.GREEN)));
-
-            sender.sendMessage(Component.text("Phiên bản database mục tiêu: ")
-                    .color(NamedTextColor.YELLOW)
-                    .append(Component.text(targetVersion)
-                            .color(NamedTextColor.GREEN)));
-        } catch (Exception e) {
-            sender.sendMessage(Component.text("Lỗi khi kiểm tra phiên bản database: " + e.getMessage())
-                    .color(NamedTextColor.RED));
-            BellCheckin.getInstance().getLogger().severe("Lỗi khi kiểm tra phiên bản database: " + e.getMessage());
-            e.printStackTrace();
-        }
+        sender.sendMessage(Component.text(langManager.getVersionTitleMessage()));
+        sender.sendMessage(Component.text(langManager.getVersionPluginMessage(pluginVersion)));
+        sender.sendMessage(Component.text(langManager.getVersionDatabaseMessage(targetVersion)));
     }
 
     private void showHelp(CommandSender sender) {
-        sender.sendMessage(Component.text("=== BellCheckin Commands ===")
-                .color(NamedTextColor.GOLD));
-        sender.sendMessage(Component.text("/bci add")
-                .color(NamedTextColor.YELLOW)
-                .append(Component.text(" - Thêm chuông điểm danh mới")
-                        .color(NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("/bci reload")
-                .color(NamedTextColor.YELLOW)
-                .append(Component.text(" - Tải lại cấu hình plugin")
-                        .color(NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("/bci version")
-                .color(NamedTextColor.YELLOW)
-                .append(Component.text(" - Hiển thị thông tin phiên bản")
-                        .color(NamedTextColor.WHITE)));
+        LanguageManager langManager = BellCheckin.getInstance().getLanguageManager();
+
+        sender.sendMessage(Component.text(langManager.getHelpTitleMessage()));
+        sender.sendMessage(Component.text(langManager.getHelpAddMessage()));
+        sender.sendMessage(Component.text(langManager.getHelpListMessage()));
+        sender.sendMessage(Component.text(langManager.getHelpRemoveMessage()));
+        sender.sendMessage(Component.text(langManager.getHelpReloadMessage()));
+        sender.sendMessage(Component.text(langManager.getHelpVersionMessage()));
     }
 
     @Override
@@ -154,6 +206,8 @@ public class BciCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> completions = new ArrayList<>();
             completions.add("add");
+            completions.add("list");
+            completions.add("remove");
             completions.add("reload");
             completions.add("version");
 
@@ -161,6 +215,59 @@ public class BciCommand implements CommandExecutor, TabCompleter {
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .toList();
         }
+
+        // Gợi ý cho lệnh remove
+        if (args.length >= 2 && args[0].equalsIgnoreCase("remove")) {
+            if (args.length == 2) {
+                // Gợi ý tên thế giới
+                BellLocationManager bellLocationManager = BellCheckin.getInstance().getBellLocationManager();
+                List<BellLocation> bellLocations = bellLocationManager.getBellLocations();
+
+                return bellLocations.stream()
+                        .map(BellLocation::worldName)
+                        .distinct()
+                        .filter(s -> s.startsWith(args[1]))
+                        .toList();
+            } else if (args.length >= 3 && args.length <= 5) {
+                // Gợi ý tọa độ
+                BellLocationManager bellLocationManager = BellCheckin.getInstance().getBellLocationManager();
+                List<BellLocation> bellLocations = bellLocationManager.getBellLocations();
+
+                String worldName = args[1];
+                List<BellLocation> filteredLocations = bellLocations.stream()
+                        .filter(loc -> loc.worldName().equals(worldName))
+                        .toList();
+
+                if (args.length == 3) {
+                    // Gợi ý tọa độ X
+                    return filteredLocations.stream()
+                            .map(loc -> String.valueOf(loc.x()))
+                            .distinct()
+                            .filter(s -> s.startsWith(args[2]))
+                            .toList();
+                } else if (args.length == 4) {
+                    // Gợi ý tọa độ Y
+                    String x = args[2];
+                    return filteredLocations.stream()
+                            .filter(loc -> String.valueOf(loc.x()).equals(x))
+                            .map(loc -> String.valueOf(loc.y()))
+                            .distinct()
+                            .filter(s -> s.startsWith(args[3]))
+                            .toList();
+                } else if (args.length == 5) {
+                    // Gợi ý tọa độ Z
+                    String x = args[2];
+                    String y = args[3];
+                    return filteredLocations.stream()
+                            .filter(loc -> String.valueOf(loc.x()).equals(x) && String.valueOf(loc.y()).equals(y))
+                            .map(loc -> String.valueOf(loc.z()))
+                            .distinct()
+                            .filter(s -> s.startsWith(args[4]))
+                            .toList();
+                }
+            }
+        }
+
         return Collections.emptyList();
     }
 }
