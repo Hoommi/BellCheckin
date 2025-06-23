@@ -10,6 +10,8 @@ import org.hommi.bellCheckin.manager.LanguageManager;
 import org.hommi.bellCheckin.sqlite.SQLiteManager;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class BellCheckin extends JavaPlugin {
 
@@ -22,6 +24,16 @@ public final class BellCheckin extends JavaPlugin {
     private File langFile;
     private YamlConfiguration langConfig;
     private String pluginVersion;
+
+    // Định nghĩa các phiên bản database tương ứng với phiên bản plugin
+    private static final Map<String, String> PLUGIN_DB_VERSION_MAP = new HashMap<>();
+
+    static {
+        // Định nghĩa mapping giữa phiên bản plugin và phiên bản database
+        PLUGIN_DB_VERSION_MAP.put("1.0.0", "1.0"); // Phiên bản cơ bản
+        PLUGIN_DB_VERSION_MAP.put("1.1.0", "2.0"); // Phiên bản với streak
+        PLUGIN_DB_VERSION_MAP.put("1.2.0", "3.0"); // Phiên bản với các tính năng mới trong tương lai
+    }
 
     public static BellCheckin getInstance() {
         return instance;
@@ -52,7 +64,7 @@ public final class BellCheckin extends JavaPlugin {
         reloadConfig();
         loadLanguageFile();
 
-        // Thiết lập database với quản lý phiên bản
+        // Thiết lập database với quản lý phiên bản tự động theo phiên bản plugin
         setupDatabase();
 
         // Khởi tạo các manager khác
@@ -74,12 +86,27 @@ public final class BellCheckin extends JavaPlugin {
 
     private void setupDatabase() {
         try (SQLiteManager sqLiteManager = new SQLiteManager()) {
-            // Khởi tạo và cập nhật database theo phiên bản
-            sqLiteManager.initializeDatabase();
+            // Lấy phiên bản database tương ứng với phiên bản plugin hiện tại
+            String targetDbVersion = getTargetDatabaseVersion();
+
+            // Khởi tạo và cập nhật database theo phiên bản plugin
+            getLogger().info("Đang cập nhật database lên phiên bản " + targetDbVersion + " (tương ứng với plugin v"
+                    + pluginVersion + ")");
+            sqLiteManager.initializeDatabaseForPluginVersion(targetDbVersion);
         } catch (Exception e) {
             getLogger().severe("Không thể thiết lập database: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Lấy phiên bản database tương ứng với phiên bản plugin hiện tại
+     * 
+     * @return Phiên bản database mục tiêu
+     */
+    public String getTargetDatabaseVersion() {
+        // Nếu không tìm thấy mapping, sử dụng phiên bản mặc định
+        return PLUGIN_DB_VERSION_MAP.getOrDefault(pluginVersion, "1.0");
     }
 
     private void loadLanguageFile() {

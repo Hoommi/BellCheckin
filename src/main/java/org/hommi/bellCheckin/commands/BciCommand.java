@@ -77,23 +77,6 @@ public class BciCommand implements CommandExecutor, TabCompleter {
                 handleVersionCommand(sender);
                 break;
 
-            case "db":
-                // Kiểm tra quyền
-                if (!sender.isOp() && !sender.hasPermission("bellcheckin.admin")) {
-                    sender.sendMessage(Component.text(langManager.getNoPermissionMessage())
-                            .color(NamedTextColor.RED));
-                    return true;
-                }
-
-                if (args.length < 2) {
-                    sender.sendMessage(Component.text("Sử dụng: /bci db <update|rollback> [version]")
-                            .color(NamedTextColor.YELLOW));
-                    return true;
-                }
-
-                handleDbCommand(sender, args);
-                break;
-
             default:
                 showHelp(sender);
                 break;
@@ -127,60 +110,21 @@ public class BciCommand implements CommandExecutor, TabCompleter {
         try (SQLiteManager sqliteManager = new SQLiteManager()) {
             sqliteManager.connect();
             String currentVersion = sqliteManager.getDatabaseVersion();
+            String targetVersion = BellCheckin.getInstance().getTargetDatabaseVersion();
 
-            sender.sendMessage(Component.text("Phiên bản database: ")
+            sender.sendMessage(Component.text("Phiên bản database hiện tại: ")
                     .color(NamedTextColor.YELLOW)
                     .append(Component.text(currentVersion)
+                            .color(NamedTextColor.GREEN)));
+
+            sender.sendMessage(Component.text("Phiên bản database mục tiêu: ")
+                    .color(NamedTextColor.YELLOW)
+                    .append(Component.text(targetVersion)
                             .color(NamedTextColor.GREEN)));
         } catch (Exception e) {
             sender.sendMessage(Component.text("Lỗi khi kiểm tra phiên bản database: " + e.getMessage())
                     .color(NamedTextColor.RED));
             BellCheckin.getInstance().getLogger().severe("Lỗi khi kiểm tra phiên bản database: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private void handleDbCommand(CommandSender sender, String[] args) {
-        String operation = args[1].toLowerCase();
-        String version = args.length > 2 ? args[2] : null;
-
-        try (SQLiteManager sqliteManager = new SQLiteManager()) {
-            sqliteManager.connect();
-
-            switch (operation) {
-                case "update":
-                    if (version == null) {
-                        sqliteManager.initializeDatabase();
-                        sender.sendMessage(Component.text("Đã cập nhật database lên phiên bản mới nhất!")
-                                .color(NamedTextColor.GREEN));
-                    } else {
-                        sqliteManager.updateDatabaseToVersion(version);
-                        sender.sendMessage(Component.text("Đã cập nhật database lên phiên bản " + version + "!")
-                                .color(NamedTextColor.GREEN));
-                    }
-                    break;
-
-                case "rollback":
-                    if (version == null) {
-                        sender.sendMessage(Component.text("Vui lòng chỉ định phiên bản để rollback!")
-                                .color(NamedTextColor.RED));
-                    } else {
-                        sqliteManager.rollbackDatabaseToVersion(version);
-                        sender.sendMessage(Component.text("Đã rollback database về phiên bản " + version + "!")
-                                .color(NamedTextColor.GREEN));
-                    }
-                    break;
-
-                default:
-                    sender.sendMessage(
-                            Component.text("Thao tác không hợp lệ. Sử dụng: /bci db <update|rollback> [version]")
-                                    .color(NamedTextColor.RED));
-                    break;
-            }
-        } catch (Exception e) {
-            sender.sendMessage(Component.text("Lỗi khi thực hiện thao tác database: " + e.getMessage())
-                    .color(NamedTextColor.RED));
-            BellCheckin.getInstance().getLogger().severe("Lỗi khi thực hiện thao tác database: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -200,10 +144,6 @@ public class BciCommand implements CommandExecutor, TabCompleter {
                 .color(NamedTextColor.YELLOW)
                 .append(Component.text(" - Hiển thị thông tin phiên bản")
                         .color(NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text("/bci db <update|rollback> [version]")
-                .color(NamedTextColor.YELLOW)
-                .append(Component.text(" - Quản lý phiên bản database")
-                        .color(NamedTextColor.WHITE)));
     }
 
     @Override
@@ -216,18 +156,9 @@ public class BciCommand implements CommandExecutor, TabCompleter {
             completions.add("add");
             completions.add("reload");
             completions.add("version");
-            completions.add("db");
 
             return completions.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
-                    .toList();
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("db")) {
-            List<String> completions = new ArrayList<>();
-            completions.add("update");
-            completions.add("rollback");
-
-            return completions.stream()
-                    .filter(s -> s.startsWith(args[1].toLowerCase()))
                     .toList();
         }
         return Collections.emptyList();
